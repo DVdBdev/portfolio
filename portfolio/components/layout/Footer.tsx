@@ -20,19 +20,10 @@ export default function Footer() {
           </a>
           <span className="text-[#21262D]">/</span>
           <a
-            href="mailto:hello@dvdb.dev"
+            href="mailto:Dries.Van.den.Brande@proton.me"
             className="font-mono text-xs text-[#484F58] hover:text-[#8B949E] transition-colors"
           >
             email
-          </a>
-          <span className="text-[#21262D]">/</span>
-          <a
-            href="https://linkedin.com/in/dvdbdev"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-xs text-[#484F58] hover:text-[#8B949E] transition-colors"
-          >
-            linkedin
           </a>
         </div>
         <span className="font-mono text-[10px] text-[#484F58]">
