@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Color palette */
+  --color-bg-base: #0B0F14;
+  --color-bg-surface: #11161D;
+  --color-bg-elevated: #161B22;
+  --color-bg-hover: #1C2128;
+
+  --color-border: #21262D;
+  --color-border-subtle: #161B22;
+
+  --color-text-primary: #E6EDF3;
+  --color-text-secondary: #8B949E;
+  --color-text-muted: #484F58;
+
+  --color-accent: #58A6FF;
+  --color-accent-dim: #1F6FEB;
+  --color-accent-subtle: #0D2B55;
+
+  --color-cyan: #39C5CF;
+  --color-cyan-dim: #1A6972;
+  --color-cyan-subtle: #0B2F35;
+
+  --color-amber: #D29922;
+  --color-amber-dim: #B08800;
+  --color-amber-subtle: #2D1F00;
+
+  --color-green: #3FB950;
+  --color-green-dim: #238636;
+  --color-green-subtle: #0F2A14;
+
+  --color-red: #F85149;
+  --color-red-dim: #8B1A1A;
+  --color-red-subtle: #2D0C0C;
+
+  --color-purple: #8B5CF6;
+  --color-purple-subtle: #1D1033;
+
+  /* Typography */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0B0F14;
+  color: #E6EDF3;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono,
+code,
+pre {
+  font-family: var(--font-geist-mono), "JetBrains Mono", "Fira Code", monospace;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #11161D;
+}
+::-webkit-scrollbar-thumb {
+  background: #21262D;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #30363D;
+}
+
+::selection {
+  background: rgba(88, 166, 255, 0.2);
+  color: #E6EDF3;
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(33, 38, 45, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 38, 45, 0.4) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+:focus-visible {
+  outline: 2px solid #58A6FF;
+  outline-offset: 2px;
+}
