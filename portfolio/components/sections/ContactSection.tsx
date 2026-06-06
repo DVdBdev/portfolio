@@ -13,18 +13,11 @@ const contactLinks = [
   },
   {
     label: "Email",
-    value: "hello@dvdb.dev",
-    href: "mailto:hello@dvdb.dev",
+    value: "Dries.Van.den.Brande@proton.me",
+    href: "mailto:Dries.Van.den.Brande@proton.me",
     icon: Mail,
     mono: false,
-  },
-  {
-    label: "LinkedIn",
-    value: "linkedin.com/in/dvdbdev",
-    href: "https://linkedin.com/in/dvdbdev",
-    icon: Link2,
-    mono: false,
-  },
+  }
 ];
 
 export default function ContactSection() {
@@ -109,7 +102,7 @@ export default function ContactSection() {
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#3FB950]" />
             </span>
             <span className="text-sm text-[#8B949E]">
-              Open to opportunities — internships, junior roles,
+              Open to opportunities, internships, junior roles,
               collaborations, and technical projects.
             </span>
           </div>

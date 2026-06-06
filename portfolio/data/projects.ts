@@ -5,7 +5,7 @@ export const projects: Project[] = [
     id: "self-service-ai",
     name: "BASF Self-Service AI App",
     description:
-      "A self-service app built during my BASF internship. Lets different BASF installations configure their own AI solutions — selecting data sources, defining preprocessing steps, and choosing modular models like KNN or regression to predict values.",
+      "A self-service app built during my BASF internship. Lets different BASF installations configure their own AI solutions by selecting data sources, defining preprocessing steps, and choosing modular models like KNN or regression to predict values.",
     systemRole: "Internship Project — BASF",
     stack: ["Python", "Dash", "Databricks", "Azure", "SQL", "Spark"],
     challenge:
@@ -39,7 +39,7 @@ export const projects: Project[] = [
   },
   {
     id: "journey-blog",
-    name: "Journey — Internship Blog",
+    name: "Internship Blog",
     description:
       "A blog platform I built to document my BASF internship week by week. 15 weeks of posts about what I worked on, what I learned, and how the experience evolved.",
     systemRole: "Personal Project",
@@ -52,7 +52,7 @@ export const projects: Project[] = [
   },
   {
     id: "portfolio",
-    name: "Portfolio — Telemetry Style",
+    name: "Portfolio - Telemetry Style",
     description:
       "This portfolio. The design is inspired by telemetry dashboards: project cards, activity logs, a stack graph, and a darker technical interface. The goal is to make it feel like a developer dashboard rather than a standard personal site.",
     systemRole: "Personal Project",

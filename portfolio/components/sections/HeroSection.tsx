@@ -170,10 +170,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="text-lg text-[#8B949E] leading-relaxed mb-10 max-w-xl"
           >
-            I like building things that are actually useful — dashboards,
-            internal tools, data pipelines, and clean full-stack apps. Based in
-            Belgium. Looking for internships and junior roles in data
-            engineering, ML tooling, or full-stack development.
+            I like building software that solves real problems. Mostly dashboards, internal tools, data pipelines, and full-stack apps. Based in Belgium. Looking for internships or junior roles in data engineering, ML tooling, or full-stack development.
           </motion.p>
 
           {/* CTAs */}

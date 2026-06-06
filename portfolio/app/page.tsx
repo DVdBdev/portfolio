@@ -47,11 +47,11 @@ export default function HomePage() {
 
         <TimelineSection />
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {/* <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="h-px bg-gradient-to-r from-transparent via-[#21262D] to-transparent" />
         </div>
 
-        <PrinciplesSection />
+        <PrinciplesSection /> */}
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="h-px bg-gradient-to-r from-transparent via-[#21262D] to-transparent" />
