@@ -35,8 +35,14 @@ export default function TimelineSection() {
       </motion.div>
 
       <div className="relative">
-        {/* Vertical line */}
-        <div className="absolute left-[11px] sm:left-[19px] top-0 bottom-0 w-px bg-[#21262D]" />
+        {/* Vertical line — draws itself downward on scroll-in */}
+        <motion.div
+          className="absolute left-[11px] sm:left-[19px] top-0 bottom-0 w-px bg-[#21262D] origin-top"
+          initial={{ scaleY: 0 }}
+          whileInView={{ scaleY: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
+        />
 
         <div className="flex flex-col gap-0">
           {timeline.map((item, i) => {

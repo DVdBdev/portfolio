@@ -1,7 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  ReactFlow,
+  useNodesState,
+  useEdgesState,
+  Handle,
+  Position,
+  Background,
+  BackgroundVariant,
+  type NodeProps,
+  type Node,
+  type Edge,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { stackNodes, stackEdges } from "@/data/stack";
 import type { StackNode } from "@/types/stack";
 
@@ -23,70 +36,80 @@ const categoryLabel: Record<StackNode["category"], string> = {
   data: "Data",
 };
 
-function NodeCard({
-  node,
-  isActive,
-  isRelated,
-  onClick,
-}: {
-  node: StackNode;
-  isActive: boolean;
-  isRelated: boolean;
-  onClick: () => void;
-}) {
-  const colors = categoryColors[node.category];
-  const dimmed = !isActive && isRelated === false;
+// ─── React Flow custom node ───────────────────────────────────────────────────
+type GraphNodeData = StackNode & { isActive: boolean; isDimmed: boolean } & Record<string, unknown>;
+type GraphNode = Node<GraphNodeData, "stack">;
 
+function StackNodeCard({ data }: NodeProps<GraphNode>) {
+  const colors = categoryColors[data.category];
   return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.15 }}
-      className={`relative text-left p-3 rounded-lg border transition-all cursor-pointer ${
-        isActive
-          ? "ring-1 ring-offset-0"
-          : dimmed
-          ? "opacity-40"
-          : "hover:opacity-80"
-      }`}
+    <div
       style={{
-        borderColor: isActive ? colors.border : "#21262D",
-        backgroundColor: isActive ? colors.bg : "#11161D",
-        ...(isActive ? { boxShadow: `0 0 0 1px ${colors.border}40` } : {}),
+        opacity: data.isDimmed ? 0.18 : 1,
+        borderColor: data.isActive ? colors.border : "#21262D",
+        backgroundColor: data.isActive ? colors.bg : "#11161D",
+        boxShadow: data.isActive ? `0 0 22px ${colors.border}66` : "none",
+        transition: "opacity 0.25s, border-color 0.25s, box-shadow 0.25s",
+        minWidth: 130,
       }}
+      className="px-4 py-3 rounded-lg border cursor-pointer select-none"
     >
-      <div className="flex items-start justify-between gap-2 mb-1.5">
+      <Handle type="target" position={Position.Top} style={{ opacity: 0, width: 1, height: 1 }} />
+      <div className="flex flex-col items-center gap-2">
+        <div
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: data.isActive ? colors.dot : colors.dot + "70" }}
+        />
         <span
-          className="text-sm font-medium"
-          style={{ color: isActive ? colors.text : "#C9D1D9" }}
+          className="font-mono text-[13px] font-semibold text-center leading-tight whitespace-nowrap"
+          style={{ color: data.isActive ? colors.text : "#C9D1D9" }}
         >
-          {node.label}
+          {data.label}
         </span>
         <span
-          className="shrink-0 font-mono text-[9px] px-1.5 py-0.5 rounded mt-0.5"
-          style={{ color: colors.text, backgroundColor: colors.bg, border: `1px solid ${colors.border}40` }}
+          className="font-mono text-[9px] px-1.5 py-0.5 rounded text-center"
+          style={{ color: colors.text, backgroundColor: colors.bg, border: `1px solid ${colors.border}50` }}
         >
-          {categoryLabel[node.category]}
+          {categoryLabel[data.category]}
         </span>
       </div>
-      {isActive && (
-        <motion.p
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          className="text-xs text-[#8B949E] leading-relaxed"
-        >
-          {node.description}
-        </motion.p>
-      )}
-    </motion.button>
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, width: 1, height: 1 }} />
+    </div>
   );
 }
 
-export default function StackGraph() {
-  const [activeNode, setActiveNode] = useState<string | null>(null);
+const nodeTypes = { stack: StackNodeCard };
 
-  const connectedNodeIds = activeNode
+// ─── Edge builder ─────────────────────────────────────────────────────────────
+function buildEdges(active: string | null): Edge[] {
+  return stackEdges.map((e) => {
+    const isHighlighted = !!active && (e.source === active || e.target === active);
+    const sourceColor = categoryColors[stackNodes.find((n) => n.id === e.source)!.category].border;
+    return {
+      id: `${e.source}-${e.target}`,
+      source: e.source,
+      target: e.target,
+      animated: isHighlighted,
+      style: {
+        stroke: isHighlighted ? sourceColor : active ? "#1C2128" : "#2D333B",
+        strokeWidth: isHighlighted ? 2 : 1,
+        transition: "stroke 0.25s, stroke-width 0.25s",
+      },
+    };
+  });
+}
+
+// ─── Mobile card grid fallback ────────────────────────────────────────────────
+function CardGrid({
+  activeNode,
+  setActiveNode,
+  activeCategory,
+}: {
+  activeNode: string | null;
+  setActiveNode: (id: string | null) => void;
+  activeCategory: StackNode["category"] | null;
+}) {
+  const connectedIds = activeNode
     ? new Set(
         stackEdges
           .filter((e) => e.source === activeNode || e.target === activeNode)
@@ -94,9 +117,111 @@ export default function StackGraph() {
       )
     : null;
 
-  function handleNodeClick(id: string) {
-    setActiveNode((prev) => (prev === id ? null : id));
-  }
+  const visibleNodes = activeCategory
+    ? stackNodes.filter((n) => n.category === activeCategory)
+    : stackNodes;
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {visibleNodes.map((node, i) => {
+        const colors = categoryColors[node.category];
+        const isActive = activeNode === node.id;
+        const dimmed = activeNode !== null && !connectedIds?.has(node.id);
+        return (
+          <motion.button
+            key={node.id}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.3, delay: i * 0.04 }}
+            onClick={() => setActiveNode(isActive ? null : node.id)}
+            className="text-left p-3 rounded-lg border transition-all"
+            style={{
+              opacity: dimmed ? 0.3 : 1,
+              borderColor: isActive ? colors.border : "#21262D",
+              backgroundColor: isActive ? colors.bg : "#11161D",
+            }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-sm font-medium" style={{ color: isActive ? colors.text : "#C9D1D9" }}>
+                {node.label}
+              </span>
+              <span
+                className="shrink-0 font-mono text-[9px] px-1.5 py-0.5 rounded mt-0.5"
+                style={{ color: colors.text, backgroundColor: colors.bg, border: `1px solid ${colors.border}40` }}
+              >
+                {categoryLabel[node.category]}
+              </span>
+            </div>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Initial nodes ────────────────────────────────────────────────────────────
+const initialNodes: GraphNode[] = stackNodes.map((n) => ({
+  id: n.id,
+  position: { x: n.x, y: n.y },
+  type: "stack" as const,
+  data: { ...n, isActive: false, isDimmed: false },
+}));
+
+// ─── Main component ───────────────────────────────────────────────────────────
+export default function StackGraph() {
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<StackNode["category"] | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<GraphNode>(initialNodes);
+  const [edges, setEdges] = useEdgesState<Edge>(buildEdges(null));
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Sync node/edge visual state with activeNode + activeCategory
+  useEffect(() => {
+    const connected = activeNode
+      ? new Set(
+          stackEdges
+            .filter((e) => e.source === activeNode || e.target === activeNode)
+            .flatMap((e) => [e.source, e.target])
+        )
+      : null;
+
+    setNodes((nds) =>
+      nds.map((n) => {
+        const categoryMismatch = activeCategory !== null && n.data.category !== activeCategory;
+        const nodeDimmed = activeNode !== null && activeNode !== n.id && !connected?.has(n.id);
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            isActive: n.id === activeNode,
+            isDimmed: categoryMismatch || nodeDimmed,
+          },
+        };
+      })
+    );
+    setEdges(buildEdges(activeNode));
+  }, [activeNode, activeCategory, setNodes, setEdges]);
+
+  const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setActiveNode((prev) => (prev === node.id ? null : node.id));
+  }, []);
+
+  const activeNodeData = activeNode ? stackNodes.find((n) => n.id === activeNode) : null;
+  const connectedNodes = activeNode
+    ? stackEdges
+        .filter((e) => e.source === activeNode || e.target === activeNode)
+        .map((e) => (e.source === activeNode ? e.target : e.source))
+        .map((id) => stackNodes.find((n) => n.id === id)!)
+        .filter(Boolean)
+    : [];
 
   const categories = Array.from(new Set(stackNodes.map((n) => n.category)));
 
@@ -115,59 +240,83 @@ export default function StackGraph() {
             sys/stack
           </span>
         </div>
-        <h2 className="text-2xl font-semibold text-[#E6EDF3] mb-2">
-          Technical stack
-        </h2>
+        <h2 className="text-2xl font-semibold text-[#E6EDF3] mb-2">Technical stack</h2>
         <p className="text-sm text-[#8B949E]">
-          Click any node to see how I use it and what connects to it.
+          {isMobile
+            ? "Tap a node to explore it."
+            : "Click any node to see how I use it and what connects to it. Drag to rearrange."}
         </p>
       </motion.div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-8">
+      {/* Legend / filter tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={() => { setActiveCategory(null); setActiveNode(null); }}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-mono text-[11px] transition-all"
+          style={{
+            borderColor: activeCategory === null ? "#30363D" : "#21262D",
+            backgroundColor: activeCategory === null ? "#161B22" : "transparent",
+            color: activeCategory === null ? "#E6EDF3" : "#484F58",
+          }}
+        >
+          All
+        </button>
         {categories.map((cat) => {
           const colors = categoryColors[cat];
+          const isActive = activeCategory === cat;
           return (
-            <div key={cat} className="flex items-center gap-1.5">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: colors.dot }}
-              />
-              <span className="font-mono text-[11px] text-[#8B949E]">
-                {categoryLabel[cat]}
-              </span>
-            </div>
+            <button
+              key={cat}
+              onClick={() => { setActiveCategory(isActive ? null : cat); setActiveNode(null); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-mono text-[11px] transition-all"
+              style={{
+                borderColor: isActive ? colors.border : "#21262D",
+                backgroundColor: isActive ? colors.bg : "transparent",
+                color: isActive ? colors.text : "#484F58",
+              }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive ? colors.dot : colors.dot + "60" }} />
+              {categoryLabel[cat]}
+            </button>
           );
         })}
       </div>
 
-      {/* Node grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-        {stackNodes.map((node, i) => (
-          <motion.div
-            key={node.id}
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3, delay: i * 0.04 }}
+      {/* Graph / mobile fallback */}
+      {isMobile ? (
+        <CardGrid activeNode={activeNode} setActiveNode={setActiveNode} activeCategory={activeCategory} />
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="rounded-lg border border-[#21262D] overflow-hidden"
+          style={{ height: 600, background: "#0B0F14" }}
+        >
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onNodeClick={handleNodeClick}
+            fitView
+            fitViewOptions={{ padding: 0.25 }}
+            nodesDraggable
+            nodesConnectable={false}
+            elementsSelectable={false}
+            panOnScroll
+            zoomOnScroll={false}
+            style={{ background: "transparent" }}
           >
-            <NodeCard
-              node={node}
-              isActive={activeNode === node.id}
-              isRelated={
-                activeNode === null
-                  ? false
-                  : connectedNodeIds?.has(node.id) ?? false
-              }
-              onClick={() => handleNodeClick(node.id)}
-            />
-          </motion.div>
-        ))}
-      </div>
+            <Background variant={BackgroundVariant.Dots} color="#1a1f26" gap={24} size={1} />
+          </ReactFlow>
+        </motion.div>
+      )}
 
-      {/* Active node detail */}
+      {/* Detail panel */}
       <AnimatePresence>
-        {activeNode && (
+        {activeNodeData && (
           <motion.div
             key="detail"
             initial={{ opacity: 0, y: 8 }}
@@ -177,48 +326,38 @@ export default function StackGraph() {
             className="mt-6 p-4 bg-[#11161D] border border-[#21262D] rounded-lg"
           >
             {(() => {
-              const node = stackNodes.find((n) => n.id === activeNode)!;
-              const colors = categoryColors[node.category];
-              const connected = stackEdges
-                .filter((e) => e.source === activeNode || e.target === activeNode)
-                .map((e) => (e.source === activeNode ? e.target : e.source))
-                .map((id) => stackNodes.find((n) => n.id === id)!)
-                .filter(Boolean);
+              const colors = categoryColors[activeNodeData.category];
               return (
                 <div className="flex flex-col sm:flex-row gap-6">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.dot }} />
-                      <span className="font-medium text-[#E6EDF3]">{node.label}</span>
+                      <span className="font-medium text-[#E6EDF3]">{activeNodeData.label}</span>
                       <span
-                        className="font-mono text-[10px] px-1.5 py-px rounded"
-                        style={{ color: colors.text, backgroundColor: colors.bg }}
+                        className="font-mono text-[9px] px-1.5 py-0.5 rounded"
+                        style={{ color: colors.text, backgroundColor: colors.bg, border: `1px solid ${colors.border}40` }}
                       >
-                        {categoryLabel[node.category]}
+                        {categoryLabel[activeNodeData.category]}
                       </span>
                     </div>
-                    <p className="text-sm text-[#8B949E] leading-relaxed">{node.description}</p>
+                    <p className="text-sm text-[#8B949E] leading-relaxed">{activeNodeData.description}</p>
                   </div>
-                  {connected.length > 0 && (
+                  {connectedNodes.length > 0 && (
                     <div className="shrink-0">
-                      <span className="font-mono text-[10px] text-[#484F58] tracking-widest mb-2 block">
+                      <span className="font-mono text-[10px] text-[#484F58] tracking-widest block mb-2">
                         CONNECTS TO
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {connected.map((c) => {
-                          const cc = categoryColors[c.category];
+                        {connectedNodes.map((cn) => {
+                          const cc = categoryColors[cn.category];
                           return (
                             <button
-                              key={c.id}
-                              onClick={() => handleNodeClick(c.id)}
+                              key={cn.id}
+                              onClick={() => setActiveNode(cn.id)}
                               className="font-mono text-[11px] px-2 py-1 rounded border hover:opacity-80 transition-opacity"
-                              style={{
-                                borderColor: cc.border,
-                                color: cc.text,
-                                backgroundColor: cc.bg,
-                              }}
+                              style={{ borderColor: cc.border + "80", color: cc.text, backgroundColor: cc.bg }}
                             >
-                              {c.label}
+                              {cn.label}
                             </button>
                           );
                         })}
