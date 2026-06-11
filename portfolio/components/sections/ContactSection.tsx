@@ -1,7 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { GitBranch, Mail, Link2, ArrowUpRight } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { GitBranch, Mail, ArrowUpRight, Copy, Check } from "lucide-react";
+
+const EMAIL = "Dries.Van.den.Brande@proton.me";
 
 const contactLinks = [
   {
@@ -11,14 +14,92 @@ const contactLinks = [
     icon: GitBranch,
     mono: true,
   },
-  {
-    label: "Email",
-    value: "Dries.Van.den.Brande@proton.me",
-    href: "mailto:Dries.Van.den.Brande@proton.me",
-    icon: Mail,
-    mono: false,
-  }
 ];
+
+function EmailRow() {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent) {
+    e.preventDefault();
+    navigator.clipboard.writeText(EMAIL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.35, delay: 0.08 }}
+      className="flex items-center bg-[#11161D] border border-[#21262D] rounded-lg overflow-hidden hover:border-[#30363D] transition-colors group"
+    >
+      {/* mailto link — takes up most of the row */}
+      <a
+        href={`mailto:${EMAIL}`}
+        className="flex flex-1 items-center gap-3 p-4 hover:bg-[#161B22] transition-colors"
+      >
+        <div className="p-2 bg-[#161B22] border border-[#21262D] rounded-md group-hover:border-[#30363D] transition-colors">
+          <Mail size={14} className="text-[#8B949E]" />
+        </div>
+        <div>
+          <div className="text-xs text-[#484F58] mb-0.5">Email</div>
+          <div className="text-sm text-[#C9D1D9] hover:text-[#58A6FF] transition-colors">
+            {EMAIL}
+          </div>
+        </div>
+      </a>
+
+      {/* Copy button */}
+      <div className="relative shrink-0 border-l border-[#21262D]">
+        <button
+          onClick={handleCopy}
+          className="flex items-center justify-center w-12 h-full py-4 text-[#484F58] hover:text-[#E6EDF3] hover:bg-[#161B22] transition-colors"
+          aria-label="Copy email address"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {copied ? (
+              <motion.span
+                key="check"
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.6, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Check size={14} className="text-[#3FB950]" />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="copy"
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.6, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Copy size={14} />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+
+        {/* Tooltip */}
+        <AnimatePresence>
+          {copied && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-[#3FB950] text-[#0B0F14] text-[10px] font-mono font-semibold rounded whitespace-nowrap"
+            >
+              Copied!
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function ContactSection() {
   return (
@@ -84,6 +165,9 @@ export default function ContactSection() {
               </motion.a>
             );
           })}
+
+          {/* Email row with copy button */}
+          <EmailRow />
         </div>
 
         <motion.div

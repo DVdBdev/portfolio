@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { telemetryEvents } from "@/data/telemetry";
 import type { TelemetryEvent } from "@/data/telemetry";
 import { formatRelativeTime } from "@/lib/utils";
@@ -15,15 +16,14 @@ const levelConfig: Record<
   warn: { label: "WARN", color: "#D29922", bg: "#2D1F00" },
 };
 
-function FeedEntry({ event, index }: { event: TelemetryEvent; index: number }) {
+function FeedEntry({ event }: { event: TelemetryEvent }) {
   const level = levelConfig[event.level];
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.35, delay: index * 0.05 }}
-      className="flex items-start gap-3 py-2.5 border-b border-[#21262D] last:border-0 group hover:bg-[#11161D] px-3 -mx-3 rounded transition-colors"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="flex items-start gap-3 py-2.5 border-b border-[#21262D] last:border-0 group hover:bg-[#161B22] px-3 -mx-3 rounded transition-colors"
     >
       {/* Level badge */}
       <span
@@ -47,8 +47,31 @@ function FeedEntry({ event, index }: { event: TelemetryEvent; index: number }) {
 }
 
 export default function TelemetryFeed() {
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Start streaming once the section enters the viewport
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setStarted(true); },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    if (visibleCount >= telemetryEvents.length) return;
+    const t = setTimeout(() => setVisibleCount((c) => c + 1), 260);
+    return () => clearTimeout(t);
+  }, [started, visibleCount]);
+
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+    <section ref={sectionRef} className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Header */}
         <div className="lg:col-span-1">
@@ -112,9 +135,19 @@ export default function TelemetryFeed() {
               </div>
             </div>
             <div>
-              {telemetryEvents.map((event, i) => (
-                <FeedEntry key={event.id} event={event} index={i} />
-              ))}
+              <AnimatePresence initial={false}>
+                {telemetryEvents.slice(0, visibleCount).map((event) => (
+                  <FeedEntry key={event.id} event={event} />
+                ))}
+              </AnimatePresence>
+              {/* Blinking cursor while streaming */}
+              {visibleCount < telemetryEvents.length && started && (
+                <motion.div
+                  animate={{ opacity: [1, 1, 0, 0] }}
+                  transition={{ repeat: Infinity, duration: 0.9, times: [0, 0.45, 0.5, 1], ease: "linear" }}
+                  className="mt-1 ml-3 w-2 h-3.5 bg-[#3FB950] rounded-sm inline-block"
+                />
+              )}
             </div>
           </div>
         </div>
