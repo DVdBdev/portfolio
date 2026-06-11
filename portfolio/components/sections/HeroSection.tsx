@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, GitBranch, Mail } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, GitBranch, Mail, Download, ChevronDown } from "lucide-react";
 
 // Animated pipeline canvas background
 function PipelineCanvas() {
@@ -110,6 +110,83 @@ function PipelineCanvas() {
   );
 }
 
+const CV_OPTIONS = [
+  { label: "EN", lang: "English", file: "/CV_DriesVanDenBrande.pdf" },
+  { label: "NL", lang: "Dutch", file: "/CV_DriesVanDenBrande_NL.pdf" },
+];
+
+function CVDownloadButton() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="inline-flex rounded-md overflow-hidden border border-[#21262D]">
+        {/* Main download — defaults to EN */}
+        <a
+          href={CV_OPTIONS[0].file}
+          download
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#161B22] hover:bg-[#1C2128] text-[#E6EDF3] text-sm font-medium transition-colors"
+        >
+          <Download size={13} className="text-[#3FB950]" />
+          <span>Download CV</span>
+          <span className="font-mono text-[10px] px-1.5 py-0.5 bg-[#0D1117] border border-[#21262D] rounded text-[#3FB950] tracking-wider">
+            EN
+          </span>
+        </a>
+
+        {/* Lang toggle */}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center justify-center px-2 bg-[#161B22] hover:bg-[#1C2128] border-l border-[#21262D] text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
+          aria-label="Choose CV language"
+        >
+          <ChevronDown size={12} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full mt-1.5 left-0 min-w-full bg-[#161B22] border border-[#21262D] rounded-md overflow-hidden shadow-xl shadow-black/40 z-50"
+          >
+            {CV_OPTIONS.map((opt) => (
+              <a
+                key={opt.label}
+                href={opt.file}
+                download
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#8B949E] hover:bg-[#1C2128] hover:text-[#E6EDF3] transition-colors"
+              >
+                <Download size={12} className="text-[#3FB950]" />
+                <span className="font-mono text-[10px] px-1.5 py-0.5 bg-[#0D1117] border border-[#21262D] rounded text-[#3FB950] tracking-wider">
+                  {opt.label}
+                </span>
+                <span>{opt.lang}</span>
+              </a>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 const containerVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } },
@@ -201,6 +278,9 @@ export default function HeroSection() {
               <Mail size={14} />
               Contact
             </a>
+
+            {/* CV Download split button */}
+            <CVDownloadButton />
           </motion.div>
 
           {/* Telemetry tags */}

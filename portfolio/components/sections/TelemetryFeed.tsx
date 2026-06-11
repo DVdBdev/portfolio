@@ -39,7 +39,7 @@ function FeedEntry({ event, index }: { event: TelemetryEvent; index: number }) {
       </span>
 
       {/* Timestamp */}
-      <span className="shrink-0 font-mono text-[11px] text-[#484F58]">
+      <span className="shrink-0 font-mono text-[11px] text-[#484F58]" suppressHydrationWarning>
         {formatRelativeTime(event.timestamp)}
       </span>
     </motion.div>
